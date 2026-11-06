@@ -1,0 +1,144 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1190 735" width="1190" height="735" role="img" aria-labelledby="title desc" font-family="Arial, Helvetica, sans-serif" fill="#0f172a">
+  <title id="title">LeadPipe architecture</title>
+  <desc id="desc">A developer pushes to GitHub. GitHub Actions tests, builds, scans and pushes images to Amazon ECR, then runs helm upgrade against EKS. Inside a Terraform-provisioned VPC, webhook traffic reaches an ALB in the public subnets and then the API in the staging or production namespace. Each namespace holds an api with an autoscaler, a redis queue and a worker. Both connect to RDS PostgreSQL in the private subnets.</desc>
+
+  <defs>
+    <marker id="arrow" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+      <path d="M0,0 L10,5 L0,10 z" fill="#334155"/>
+    </marker>
+    <style>
+      .box { fill: #ffffff; stroke: #475569; stroke-width: 1.5; }
+      .name { font-size: 15px; font-weight: 700; text-anchor: middle; }
+      .note { font-size: 12px; fill: #334155; text-anchor: middle; }
+      .label { font-size: 12px; fill: #334155; }
+      .zone { font-size: 13px; font-weight: 700; fill: #334155; }
+      .link { fill: none; stroke: #334155; stroke-width: 1.6; marker-end: url(#arrow); }
+      .bus { fill: none; stroke: #334155; stroke-width: 1.6; }
+    </style>
+  </defs>
+
+  <!-- Explicit background, so the diagram stays legible in GitHub's dark mode. -->
+  <rect x="0" y="0" width="1190" height="735" fill="#ffffff"/>
+
+  <!-- Delivery path -->
+  <rect class="box" x="30" y="40" width="150" height="64" rx="8"/>
+  <text class="name" x="105" y="68">Developer</text>
+  <text class="note" x="105" y="88">pull request, merge</text>
+
+  <rect class="box" x="270" y="30" width="400" height="84" rx="8"/>
+  <text class="name" x="470" y="56">GitHub Actions</text>
+  <text class="note" x="470" y="76">test, build, scan, push, deploy</text>
+  <text class="note" x="470" y="96">short-lived AWS credentials through OIDC</text>
+
+  <rect class="box" x="860" y="40" width="200" height="64" rx="8"/>
+  <text class="name" x="960" y="68">Amazon ECR</text>
+  <text class="note" x="960" y="88">immutable tags</text>
+
+  <path class="link" d="M180,72 H268"/>
+  <path class="link" d="M670,72 H858"/>
+  <text class="label" x="682" y="62">image tagged with git SHA</text>
+
+  <!-- AWS services outside the VPC -->
+  <rect class="box" x="30" y="350" width="150" height="88" rx="8"/>
+  <text class="name" x="105" y="376">Secrets Manager</text>
+  <text class="note" x="105" y="396">database password</text>
+  <text class="note" x="105" y="412">API keys</text>
+  <text class="note" x="105" y="428">read at deploy time</text>
+
+  <rect class="box" x="30" y="458" width="150" height="88" rx="8"/>
+  <text class="name" x="105" y="484">infra/bootstrap</text>
+  <text class="note" x="105" y="504">budget alert</text>
+  <text class="note" x="105" y="520">Terraform state in S3</text>
+  <text class="note" x="105" y="536">GitHub OIDC provider</text>
+
+  <!-- VPC -->
+  <rect x="210" y="170" width="960" height="545" rx="10" fill="#f8fafc" stroke="#64748b" stroke-width="1.5"/>
+  <text x="225" y="193" font-size="14" font-weight="700">AWS VPC, provisioned by Terraform</text>
+
+  <!-- Public subnets -->
+  <rect x="230" y="205" width="920" height="100" rx="8" fill="#fff7ed" stroke="#fdba74" stroke-width="1.5"/>
+  <text class="zone" x="1140" y="222" text-anchor="end">Public subnets</text>
+
+  <rect class="box" x="275" y="232" width="140" height="60" rx="8"/>
+  <text class="name" x="345" y="257">ALB</text>
+  <text class="note" x="345" y="276">staging Ingress</text>
+
+  <rect class="box" x="705" y="232" width="140" height="60" rx="8"/>
+  <text class="name" x="775" y="257">ALB</text>
+  <text class="note" x="775" y="276">production Ingress</text>
+
+  <rect class="box" x="960" y="232" width="160" height="60" rx="8"/>
+  <text class="name" x="1040" y="257">NAT gateway</text>
+  <text class="note" x="1040" y="276">outbound for nodes</text>
+
+  <!-- Private subnets -->
+  <rect x="230" y="325" width="920" height="375" rx="8" fill="#eff6ff" stroke="#93c5fd" stroke-width="1.5"/>
+  <text class="zone" x="1140" y="343" text-anchor="end">Private subnets</text>
+
+  <!-- EKS -->
+  <rect x="250" y="350" width="880" height="210" rx="8" fill="#ffffff" stroke="#2563eb" stroke-width="1.8"/>
+  <text x="365" y="372" font-size="14" font-weight="700">EKS cluster: managed node group, Kubernetes 1.37</text>
+
+  <!-- Staging namespace -->
+  <rect x="270" y="385" width="410" height="160" rx="8" fill="#f0fdf4" stroke="#22c55e" stroke-width="1.5"/>
+  <text class="zone" x="365" y="407">namespace: staging (automatic)</text>
+  <rect class="box" x="290" y="425" width="110" height="100" rx="8"/>
+  <text class="name" x="345" y="456">api</text>
+  <text class="note" x="345" y="478">Deployment</text>
+  <text class="note" x="345" y="496">HPA on CPU</text>
+  <rect class="box" x="420" y="425" width="110" height="100" rx="8"/>
+  <text class="name" x="475" y="456">redis</text>
+  <text class="note" x="475" y="478">queue</text>
+  <text class="note" x="475" y="496">disposable</text>
+  <rect class="box" x="550" y="425" width="110" height="100" rx="8"/>
+  <text class="name" x="605" y="456">worker</text>
+  <text class="note" x="605" y="478">Deployment</text>
+  <text class="note" x="605" y="496">scores leads</text>
+  <path class="link" d="M400,475 H418"/>
+  <path class="link" d="M530,475 H548"/>
+
+  <!-- Production namespace -->
+  <rect x="700" y="385" width="410" height="160" rx="8" fill="#fef2f2" stroke="#ef4444" stroke-width="1.5"/>
+  <text class="zone" x="795" y="407">namespace: production (after approval)</text>
+  <rect class="box" x="720" y="425" width="110" height="100" rx="8"/>
+  <text class="name" x="775" y="456">api</text>
+  <text class="note" x="775" y="478">Deployment</text>
+  <text class="note" x="775" y="496">HPA on CPU</text>
+  <rect class="box" x="850" y="425" width="110" height="100" rx="8"/>
+  <text class="name" x="905" y="456">redis</text>
+  <text class="note" x="905" y="478">queue</text>
+  <text class="note" x="905" y="496">disposable</text>
+  <rect class="box" x="980" y="425" width="110" height="100" rx="8"/>
+  <text class="name" x="1035" y="456">worker</text>
+  <text class="note" x="1035" y="478">Deployment</text>
+  <text class="note" x="1035" y="496">scores leads</text>
+  <path class="link" d="M830,475 H848"/>
+  <path class="link" d="M960,475 H978"/>
+
+  <!-- RDS -->
+  <rect class="box" x="280" y="610" width="820" height="75" rx="8"/>
+  <text class="name" x="690" y="638">RDS PostgreSQL</text>
+  <text class="note" x="690" y="662">One instance with one database per environment. Port 5432 is open only to the cluster security group.</text>
+
+  <!-- Webhook traffic -->
+  <rect class="box" x="30" y="232" width="150" height="60" rx="8"/>
+  <text class="name" x="105" y="257">Webhook caller</text>
+  <text class="note" x="105" y="276">web form or CRM</text>
+  <path class="bus" d="M105,232 V216 H775"/>
+  <path class="link" d="M345,216 V230"/>
+  <path class="link" d="M775,216 V230"/>
+  <path class="link" d="M345,292 V423"/>
+  <path class="link" d="M775,292 V423"/>
+
+  <!-- Database connections -->
+  <path class="link" d="M345,525 V608"/>
+  <path class="link" d="M605,525 V608"/>
+  <path class="link" d="M775,525 V608"/>
+  <path class="link" d="M1035,525 V608"/>
+
+  <!-- Deploy and image pull -->
+  <path class="link" d="M560,114 V348"/>
+  <text class="label" x="570" y="150">helm upgrade, then smoke test</text>
+  <path class="link" d="M900,104 V348"/>
+  <text class="label" x="910" y="150">nodes pull images</text>
+</svg>
