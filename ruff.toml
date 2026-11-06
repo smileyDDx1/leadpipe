@@ -1,0 +1,9 @@
+target-version = "py313"
+line-length = 100
+src = ["app/api", "app/worker"]
+
+[lint]
+select = ["E", "F", "I", "UP", "B", "S", "C4", "SIM", "RUF"]
+
+[lint.per-file-ignores]
+"**/tests/*" = ["S101", "S105", "S106"]

@@ -1,0 +1,6 @@
+# Allow-list: only what the image needs reaches the build context.
+*
+!requirements.txt
+!leadpipe_worker/
+**/__pycache__
+**/*.pyc

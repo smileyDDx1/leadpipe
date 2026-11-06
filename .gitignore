@@ -1,0 +1,34 @@
+# Python
+__pycache__/
+*.pyc
+.venv/
+.pytest_cache/
+.ruff_cache/
+.coverage
+htmlcov/
+
+# Local configuration and secrets
+.env
+*.pem
+
+# Terraform
+.terraform/
+infra/modules/*/.terraform.lock.hcl
+*.tfstate
+*.tfstate.*
+*.tfplan
+tfplan
+crash.log
+*.auto.tfvars
+terraform.tfvars
+!terraform.tfvars.example
+
+# Helm
+helm/leadpipe/charts/
+*.tgz
+
+# OS / editor
+.DS_Store
+Thumbs.db
+.idea/
+.vscode/

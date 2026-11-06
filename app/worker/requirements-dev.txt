@@ -1,0 +1,30 @@
+colorama==0.4.6
+    # via pytest
+coverage==7.17.2
+    # via pytest-cov
+fakeredis==2.40.0
+    # via -r requirements-dev.in
+iniconfig==2.3.1
+    # via pytest
+packaging==26.3
+    # via pytest
+pluggy==1.7.0
+    # via
+    #   pytest
+    #   pytest-cov
+pygments==2.21.0
+    # via pytest
+pytest==9.2.0
+    # via
+    #   -r requirements-dev.in
+    #   pytest-cov
+pytest-cov==7.1.0
+    # via -r requirements-dev.in
+redis==8.1.0
+    # via
+    #   -c requirements.txt
+    #   fakeredis
+ruff==0.17.4
+    # via -r requirements-dev.in
+sortedcontainers==2.4.0
+    # via fakeredis

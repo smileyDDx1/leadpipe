@@ -1,0 +1,4 @@
+# Scripts and manifests run inside Linux containers: keep LF even when edited on Windows.
+* text=auto eol=lf
+*.png binary
+*.gif binary
