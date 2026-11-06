@@ -1,0 +1,74 @@
+    leadpipe/api:broken-crash
+    leadpipe/api:broken-smoke
+    leadpipe/worker:broken-crash
+    leadpipe/worker:broken-smoke
+
+[09:47:39] Starting state
+leadpipe-api-79d6c9bdcc-8wvx7   true   Running   0     leadpipe/api:rel-4
+REVISION	UPDATED                 	STATUS    	CHART         	APP VERSION	DESCRIPTION                           
+5       	Fri Nov  6 09:42:13 2026	failed    	leadpipe-1.0.0	1.0.0      	Upgrade "leadpipe" failed: resource De
+6       	Fri Nov  6 09:43:26 2026	superseded	leadpipe-1.0.0	1.0.0      	Rollback to 4                         
+7       	Fri Nov  6 09:43:56 2026	failed    	leadpipe-1.0.0	1.0.0      	Upgrade "leadpipe" failed: resource De
+8       	Fri Nov  6 09:45:09 2026	superseded	leadpipe-1.0.0	1.0.0      	Rollback to 6                         
+9       	Fri Nov  6 09:45:17 2026	superseded	leadpipe-1.0.0	1.0.0      	Upgrade complete                      
+10      	Fri Nov  6 09:46:40 2026	deployed  	leadpipe-1.0.0	1.0.0      	Upgrade complete                      
+
+[09:47:40] Scenario 1, manual: deploy a release that crashes on start, with no automatic rollback
+Error: UPGRADE FAILED: resource Deployment/leadpipe/leadpipe-api not ready. status: InProgress, message: Pending termination: 1
+context deadline exceeded
+
+[09:48:48] The new pod crash-loops. maxUnavailable: 0 keeps the old pod serving.
+leadpipe-api-79d6c9bdcc-8wvx7   true    Running   0     leadpipe/api:rel-4
+leadpipe-api-bb45c48b5-bljbp    false   Running   3     leadpipe/api:broken-crash
+leadpipe-api-79d6c9bdcc-8wvx7   1/1   Running            0             2m1s
+leadpipe-api-bb45c48b5-bljbp    0/1   CrashLoopBackOff   3 (23s ago)   60s
+    requests so far:     66s  ok=326  failed=0
+
+[09:48:48] Recovering by hand: helm rollback
+Rollback was a success! Happy Helming!
+leadpipe-api-79d6c9bdcc-8wvx7   true   Running   0     leadpipe/api:rel-4
+REVISION	UPDATED                 	STATUS    	CHART         	APP VERSION	DESCRIPTION                           
+7       	Fri Nov  6 09:43:56 2026	failed    	leadpipe-1.0.0	1.0.0      	Upgrade "leadpipe" failed: resource De
+8       	Fri Nov  6 09:45:09 2026	superseded	leadpipe-1.0.0	1.0.0      	Rollback to 6                         
+9       	Fri Nov  6 09:45:17 2026	superseded	leadpipe-1.0.0	1.0.0      	Upgrade complete                      
+10      	Fri Nov  6 09:46:40 2026	superseded	leadpipe-1.0.0	1.0.0      	Upgrade complete                      
+11      	Fri Nov  6 09:47:40 2026	failed    	leadpipe-1.0.0	1.0.0      	Upgrade "leadpipe" failed: resource De
+12      	Fri Nov  6 09:48:49 2026	deployed  	leadpipe-1.0.0	1.0.0      	Rollback to 10                        
+
+[09:48:56] Scenario 2, automatic: the pipeline deploys a release that crashes on start
+==> Deploying broken-crash to local (namespace leadpipe)
+level=WARN msg="upgrade failed" name=leadpipe error="resource Deployment/leadpipe/leadpipe-api not ready. status: InProgress, message: Pending termination: 1\nc
+Error: UPGRADE FAILED: release leadpipe failed, and has been rolled back due to rollback-on-failure being set: resource Deployment/leadpipe/leadpipe-api not rea
+context deadline exceeded
+leadpipe-api-79d6c9bdcc-8wvx7   true   Running   0     leadpipe/api:rel-4
+REVISION	UPDATED                 	STATUS    	CHART         	APP VERSION	DESCRIPTION                           
+9       	Fri Nov  6 09:45:17 2026	superseded	leadpipe-1.0.0	1.0.0      	Upgrade complete                      
+10      	Fri Nov  6 09:46:40 2026	superseded	leadpipe-1.0.0	1.0.0      	Upgrade complete                      
+11      	Fri Nov  6 09:47:40 2026	failed    	leadpipe-1.0.0	1.0.0      	Upgrade "leadpipe" failed: resource De
+12      	Fri Nov  6 09:48:49 2026	superseded	leadpipe-1.0.0	1.0.0      	Rollback to 10                        
+13      	Fri Nov  6 09:48:57 2026	failed    	leadpipe-1.0.0	1.0.0      	Upgrade "leadpipe" failed: resource De
+14      	Fri Nov  6 09:50:04 2026	deployed  	leadpipe-1.0.0	1.0.0      	Rollback to 12                        
+    requests so far:    148s  ok=726  failed=0
+
+[09:50:12] Scenario 3, automatic: pods pass their probes, but the smoke test fails
+/healthz attempt 8 failed: <urlopen error [Errno 111] Connection refused>
+/healthz attempt 9 failed: <urlopen error [Errno 111] Connection refused>
+/healthz attempt 10 failed: <urlopen error [Errno 111] Connection refused>
+==> Smoke test failed
+==> Rolling back local to the previous release
+==> Rolled back. broken-smoke is not live.
+    deploy.sh exit code: 1 (1 means rolled back, and fails the pipeline)
+leadpipe-api-54578b5fb5-5wdvs   true   Running   0     leadpipe/api:broken-smoke
+leadpipe-api-79d6c9bdcc-lg95g   true   Running   0     leadpipe/api:rel-4
+REVISION	UPDATED                 	STATUS    	CHART         	APP VERSION	DESCRIPTION                           
+11      	Fri Nov  6 09:47:40 2026	failed    	leadpipe-1.0.0	1.0.0      	Upgrade "leadpipe" failed: resource De
+12      	Fri Nov  6 09:48:49 2026	superseded	leadpipe-1.0.0	1.0.0      	Rollback to 10                        
+13      	Fri Nov  6 09:48:57 2026	failed    	leadpipe-1.0.0	1.0.0      	Upgrade "leadpipe" failed: resource De
+14      	Fri Nov  6 09:50:04 2026	superseded	leadpipe-1.0.0	1.0.0      	Rollback to 12                        
+15      	Fri Nov  6 09:50:12 2026	superseded	leadpipe-1.0.0	1.0.0      	Upgrade complete                      
+16      	Fri Nov  6 09:50:54 2026	deployed  	leadpipe-1.0.0	1.0.0      	Rollback to 14                        
+
+[09:51:00] Final result
+    requests so far:    199s  ok=976  failed=0
+    live image tag: rel-4
+    PASS: every broken release was rolled back, and rel-4 is live

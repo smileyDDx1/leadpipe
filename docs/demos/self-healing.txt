@@ -1,0 +1,42 @@
+
+[09:39:36] Starting state
+leadpipe-api-79d6c9bdcc-xc6gx      true   Running   0     leadpipe/api:rel-4
+leadpipe-redis-6f7c85946c-ks9sh    true   Running   0     redis:7-alpine
+leadpipe-worker-6ccddb9b7f-tdnv9   true   Running   0     leadpipe/worker:rel-4
+
+[09:39:37] Deleting the api pod: leadpipe-api-79d6c9bdcc-xc6gx
+    replaced by leadpipe-api-79d6c9bdcc-xdpkh, ready after 5s
+
+[09:39:42] Deleting the worker pod: leadpipe-worker-6ccddb9b7f-tdnv9
+    replaced by leadpipe-worker-6ccddb9b7f-7srlp, ready after 8s
+
+[09:39:50] Deleting the redis pod: leadpipe-redis-6f7c85946c-ks9sh
+    replaced by leadpipe-redis-6f7c85946c-j5jtn, ready after 1s
+    Redis has no persistence, so the stream and the consumer group are gone.
+
+[09:39:51] The harder case: a long Redis outage, with a lead arriving in the middle of it
+    Redis is scaled to zero. Waiting 25 seconds, longer than readiness takes to fail.
+    The API stays in service, because it can still save leads:
+leadpipe-api-79d6c9bdcc-xdpkh   true   Running   0     leadpipe/api:rel-4
+
+[09:40:19] Posting a lead while Redis is down
+45b7b1ff-2a81-48ac-93ff-67f95e236a19
+    HTTP 202 in 0.11s
+
+[09:40:21] Bringing Redis back. It starts empty, so only the sweep can recover this lead.
+
+[09:40:22] Waiting for the lead to be scored, with nothing done by hand
+    lead 45b7b1ff-2a81-48ac-93ff-67f95e236a19: scored 95 hot, 77s after Redis came back
+
+[09:41:39] Worker log
+    04:09:55  dependency unavailable (ConnectionError), retrying in 4s
+    04:09:59  dependency unavailable (ConnectionError), retrying in 8s
+    04:10:07  dependency unavailable (ConnectionError), retrying in 15s
+    04:10:22  dependency unavailable (ConnectionError), retrying in 15s
+    04:10:37  created consumer group scorers
+    04:11:38  re-queued 1 leads that were missing from the queue
+
+[09:41:39] Final state
+leadpipe-api-79d6c9bdcc-xdpkh      true   Running   0     leadpipe/api:rel-4
+leadpipe-redis-6f7c85946c-ntjpk    true   Running   0     redis:7-alpine
+leadpipe-worker-6ccddb9b7f-7srlp   true   Running   0     leadpipe/worker:rel-4

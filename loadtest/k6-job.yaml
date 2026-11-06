@@ -1,0 +1,31 @@
+# Runs the load test from inside the cluster. See scripts/demos/autoscaling.sh.
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: k6
+spec:
+  backoffLimit: 0
+  ttlSecondsAfterFinished: 600
+  template:
+    spec:
+      restartPolicy: Never
+      containers:
+        - name: k6
+          image: grafana/k6:2.3.0
+          imagePullPolicy: IfNotPresent
+          args: ["run", "--quiet", "--summary-trend-stats=avg,med,p(95),max", "/scripts/leads.js"]
+          env:
+            - name: API_URL
+              value: http://leadpipe-api
+            - name: API_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: leadpipe-secrets
+                  key: API_KEY
+          volumeMounts:
+            - name: scripts
+              mountPath: /scripts
+      volumes:
+        - name: scripts
+          configMap:
+            name: k6-script
