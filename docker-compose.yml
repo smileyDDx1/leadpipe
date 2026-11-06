@@ -1,0 +1,93 @@
+# Full local stack: docker compose up --build --wait
+# The defaults below are for local development only. Copy .env.example to .env to change them.
+name: leadpipe
+
+x-app-environment: &app-environment
+  DB_HOST: db
+  DB_PORT: "5432"
+  DB_NAME: ${POSTGRES_DB:-leadpipe}
+  DB_USER: ${POSTGRES_USER:-leadpipe}
+  DB_PASSWORD: ${POSTGRES_PASSWORD:-leadpipe-local}
+  REDIS_HOST: redis
+  REDIS_PORT: "6379"
+  LOG_LEVEL: ${LOG_LEVEL:-INFO}
+
+x-hardening: &hardening
+  read_only: true
+  tmpfs:
+    - /tmp
+  cap_drop:
+    - ALL
+  security_opt:
+    - no-new-privileges:true
+
+services:
+  db:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER:-leadpipe}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-leadpipe-local}
+      POSTGRES_DB: ${POSTGRES_DB:-leadpipe}
+    volumes:
+      - db-data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U $$POSTGRES_USER -d $$POSTGRES_DB"]
+      interval: 5s
+      timeout: 3s
+      retries: 20
+
+  redis:
+    image: redis:7-alpine
+    # No persistence: the queue is disposable, because every lead is safe in PostgreSQL.
+    command: ["redis-server", "--save", "", "--appendonly", "no"]
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 3s
+      retries: 20
+
+  migrate:
+    <<: *hardening
+    image: leadpipe-api:${TAG:-dev}
+    build: ./app/api
+    command: ["python", "-m", "leadpipe_api.migrate"]
+    environment: *app-environment
+    restart: "no"
+    depends_on:
+      db:
+        condition: service_healthy
+
+  api:
+    <<: *hardening
+    image: leadpipe-api:${TAG:-dev}
+    build: ./app/api
+    environment:
+      <<: *app-environment
+      API_KEY: ${API_KEY:-local-dev-key}
+    ports:
+      - "${API_PORT:-8000}:8000"
+    restart: unless-stopped
+    depends_on:
+      db:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+      migrate:
+        condition: service_completed_successfully
+
+  worker:
+    <<: *hardening
+    image: leadpipe-worker:${TAG:-dev}
+    build: ./app/worker
+    environment: *app-environment
+    restart: unless-stopped
+    depends_on:
+      db:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+      migrate:
+        condition: service_completed_successfully
+
+volumes:
+  db-data:
