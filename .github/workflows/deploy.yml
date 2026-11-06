@@ -1,0 +1,143 @@
+# On merge to main: build, scan and push, deploy to staging, then wait for approval to deploy
+# to production. scripts/deploy.sh smoke-tests each deploy and rolls back if the test fails.
+#
+# Skips cleanly until the repository variables exist (see docs/runbook.md), so the repository
+# stays green before any AWS account is connected.
+name: Deploy
+
+on:
+  push:
+    branches: [main]
+    paths-ignore:
+      - "docs/**"
+      - "infra/**"
+      - "**.md"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+# Never run two deploys at once, and never cancel one halfway through.
+concurrency:
+  group: deploy
+  cancel-in-progress: false
+
+env:
+  AWS_REGION: ${{ vars.AWS_REGION }}
+  IMAGE_REGISTRY: ${{ vars.AWS_ACCOUNT_ID }}.dkr.ecr.${{ vars.AWS_REGION }}.amazonaws.com
+  HELM_VERSION: v4.3.1
+  TRIVY_IMAGE: aquasec/trivy:0.76.2@sha256:8f6bb947dbc528902e11f2f5be52f7b519f6a39d5d148f41166f2040499768fb
+
+jobs:
+  build-and-push:
+    name: Build, scan and push (${{ matrix.service }})
+    if: vars.AWS_ACCOUNT_ID != ''
+    runs-on: ubuntu-24.04
+    permissions:
+      contents: read
+      id-token: write # Exchanged for short-lived AWS credentials. No keys are stored in GitHub.
+    strategy:
+      matrix:
+        service: [api, worker]
+    env:
+      REPOSITORY: leadpipe/${{ matrix.service }}
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - uses: aws-actions/configure-aws-credentials@e1253824e5c10ff9df46874f81ed3ec929e19cfd # v6.3.0
+        with:
+          role-to-assume: arn:aws:iam::${{ vars.AWS_ACCOUNT_ID }}:role/leadpipe-gha-ecr-push
+          aws-region: ${{ vars.AWS_REGION }}
+      - uses: aws-actions/amazon-ecr-login@03f1aad4c6c7ffd436567f42f9384779290529bd # v2.1.7
+      # Tags are immutable, so re-running this workflow must not try to push the same tag again.
+      - name: Check whether this commit is already pushed
+        id: existing
+        env:
+          SHA: ${{ github.sha }}
+        run: |
+          if aws ecr describe-images --repository-name "${REPOSITORY}" --image-ids "imageTag=${SHA}" >/dev/null 2>&1; then
+            echo "found=true" >> "${GITHUB_OUTPUT}"
+          else
+            echo "found=false" >> "${GITHUB_OUTPUT}"
+          fi
+      - uses: docker/setup-buildx-action@f87e5991a6d7451dcb8d9637bfbc97413f497069 # v4.4.1
+        if: steps.existing.outputs.found == 'false'
+      - name: Build image
+        if: steps.existing.outputs.found == 'false'
+        uses: docker/build-push-action@c3c9e263c25d99ce0380d002d59b67737d91b0dc # v7.4.0
+        with:
+          context: app/${{ matrix.service }}
+          load: true
+          tags: ${{ env.IMAGE_REGISTRY }}/${{ env.REPOSITORY }}:${{ github.sha }}
+          cache-from: type=gha,scope=${{ matrix.service }}
+          cache-to: type=gha,mode=max,scope=${{ matrix.service }}
+      - name: Scan image, failing on critical vulnerabilities
+        if: steps.existing.outputs.found == 'false'
+        env:
+          IMAGE: ${{ env.IMAGE_REGISTRY }}/${{ env.REPOSITORY }}:${{ github.sha }}
+        run: |
+          docker run --rm \
+            --volume /var/run/docker.sock:/var/run/docker.sock \
+            "${TRIVY_IMAGE}" image \
+            --severity CRITICAL --ignore-unfixed --exit-code 1 --no-progress \
+            "${IMAGE}"
+      - name: Push image, tagged with the commit SHA
+        if: steps.existing.outputs.found == 'false'
+        env:
+          IMAGE: ${{ env.IMAGE_REGISTRY }}/${{ env.REPOSITORY }}:${{ github.sha }}
+        run: docker push "${IMAGE}"
+
+  deploy-staging:
+    name: Deploy to staging
+    needs: build-and-push
+    runs-on: ubuntu-24.04
+    environment: staging
+    permissions:
+      contents: read
+      id-token: write
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - uses: aws-actions/configure-aws-credentials@e1253824e5c10ff9df46874f81ed3ec929e19cfd # v6.3.0
+        with:
+          role-to-assume: arn:aws:iam::${{ vars.AWS_ACCOUNT_ID }}:role/leadpipe-gha-deploy-staging
+          aws-region: ${{ vars.AWS_REGION }}
+      - uses: azure/setup-helm@9bc31f4ebc9c6b171d7bfbaa5d006ae7abdb4310 # v5.0.1
+        with:
+          version: ${{ env.HELM_VERSION }}
+      - name: Connect to the cluster
+        run: aws eks update-kubeconfig --name leadpipe
+      - name: Deploy, smoke test, and roll back on failure
+        env:
+          TAG: ${{ github.sha }}
+        run: scripts/deploy.sh staging "${TAG}"
+
+  deploy-production:
+    name: Deploy to production
+    needs: deploy-staging
+    runs-on: ubuntu-24.04
+    # This job waits here for a required reviewer. The AWS role also trusts only this
+    # environment, so the gate cannot be skipped by editing the workflow.
+    environment: production
+    permissions:
+      contents: read
+      id-token: write
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - uses: aws-actions/configure-aws-credentials@e1253824e5c10ff9df46874f81ed3ec929e19cfd # v6.3.0
+        with:
+          role-to-assume: arn:aws:iam::${{ vars.AWS_ACCOUNT_ID }}:role/leadpipe-gha-deploy-production
+          aws-region: ${{ vars.AWS_REGION }}
+      - uses: azure/setup-helm@9bc31f4ebc9c6b171d7bfbaa5d006ae7abdb4310 # v5.0.1
+        with:
+          version: ${{ env.HELM_VERSION }}
+      - name: Connect to the cluster
+        run: aws eks update-kubeconfig --name leadpipe
+      - name: Deploy, smoke test, and roll back on failure
+        env:
+          TAG: ${{ github.sha }}
+        run: scripts/deploy.sh production "${TAG}"

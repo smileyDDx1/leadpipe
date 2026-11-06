@@ -1,0 +1,131 @@
+# Pull requests get a plan posted as a comment. Merges to main apply after approval.
+#
+# Skips cleanly until the repository variables exist (see docs/runbook.md). The offline
+# Terraform checks that need no AWS account are in ci.yml.
+name: Terraform
+
+on:
+  pull_request:
+    paths:
+      - "infra/**"
+      - ".github/workflows/terraform.yml"
+  push:
+    branches: [main]
+    paths:
+      - "infra/**"
+      - ".github/workflows/terraform.yml"
+
+permissions:
+  contents: read
+
+# Terraform also locks the state, but queueing here avoids failed runs waiting on that lock.
+concurrency:
+  group: terraform
+  cancel-in-progress: false
+
+env:
+  TERRAFORM_VERSION: 1.17.1
+  TF_IN_AUTOMATION: "true"
+  TF_INPUT: "false"
+  TF_VAR_github_repository: ${{ github.repository }}
+  TF_VAR_region: ${{ vars.AWS_REGION }}
+  STATE_BUCKET: leadpipe-tfstate-${{ vars.AWS_ACCOUNT_ID }}
+
+jobs:
+  plan:
+    name: Plan and post to the pull request
+    # Pull requests from forks get no OIDC token, so they cannot run this job.
+    if: >-
+      github.event_name == 'pull_request'
+      && vars.AWS_ACCOUNT_ID != ''
+      && github.event.pull_request.head.repo.full_name == github.repository
+    runs-on: ubuntu-24.04
+    permissions:
+      contents: read
+      id-token: write
+      pull-requests: write
+    defaults:
+      run:
+        working-directory: infra/main
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - uses: aws-actions/configure-aws-credentials@e1253824e5c10ff9df46874f81ed3ec929e19cfd # v6.3.0
+        with:
+          role-to-assume: arn:aws:iam::${{ vars.AWS_ACCOUNT_ID }}:role/leadpipe-terraform-plan
+          aws-region: ${{ vars.AWS_REGION }}
+      - uses: hashicorp/setup-terraform@dfe3c3f87815947d99a8997f908cb6525fc44e9e # v4.0.1
+        with:
+          terraform_version: ${{ env.TERRAFORM_VERSION }}
+          terraform_wrapper: false
+      - name: Init
+        run: terraform init -backend-config="bucket=${STATE_BUCKET}" -backend-config="region=${AWS_REGION}"
+      - name: Plan
+        id: plan
+        run: |
+          set +e
+          terraform plan -no-color -detailed-exitcode -out=tfplan > plan.txt 2>&1
+          code=$?
+          set -e
+          cat plan.txt
+          echo "exitcode=${code}" >> "${GITHUB_OUTPUT}"
+          # Exit code 2 means the plan succeeded and has changes to apply.
+          [ "${code}" -ne 1 ]
+      - name: Post the plan on the pull request
+        if: always() && steps.plan.outcome != 'skipped'
+        env:
+          GH_TOKEN: ${{ github.token }}
+          PR_NUMBER: ${{ github.event.pull_request.number }}
+          RUN_URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
+          PLAN_OUTCOME: ${{ steps.plan.outcome }}
+        run: |
+          {
+            echo "### Terraform plan: ${PLAN_OUTCOME}"
+            echo
+            echo "<details><summary>Show plan</summary>"
+            echo
+            echo '```'
+            # GitHub limits comments to 65536 characters, so the end of the plan is what is kept.
+            tail --bytes=60000 plan.txt
+            echo '```'
+            echo
+            echo "</details>"
+            echo
+            echo "[Full run](${RUN_URL})"
+          } > comment.md
+          # Updates the previous plan comment instead of adding a new one on every push.
+          gh pr comment "${PR_NUMBER}" --body-file comment.md --edit-last --create-if-none
+
+  apply:
+    name: Apply after approval
+    if: github.event_name == 'push' && vars.AWS_ACCOUNT_ID != ''
+    runs-on: ubuntu-24.04
+    # The job waits here for a required reviewer. The AWS role trusts only this environment.
+    environment: infrastructure
+    permissions:
+      contents: read
+      id-token: write
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - uses: aws-actions/configure-aws-credentials@e1253824e5c10ff9df46874f81ed3ec929e19cfd # v6.3.0
+        with:
+          role-to-assume: arn:aws:iam::${{ vars.AWS_ACCOUNT_ID }}:role/leadpipe-terraform-apply
+          aws-region: ${{ vars.AWS_REGION }}
+      - uses: hashicorp/setup-terraform@dfe3c3f87815947d99a8997f908cb6525fc44e9e # v4.0.1
+        with:
+          terraform_version: ${{ env.TERRAFORM_VERSION }}
+          terraform_wrapper: false
+      - uses: azure/setup-helm@9bc31f4ebc9c6b171d7bfbaa5d006ae7abdb4310 # v5.0.1
+        with:
+          version: v4.3.1
+      - name: Init
+        working-directory: infra/main
+        run: terraform init -backend-config="bucket=${STATE_BUCKET}" -backend-config="region=${AWS_REGION}"
+      - name: Apply
+        working-directory: infra/main
+        run: terraform apply -auto-approve
+      - name: Install what runs inside the cluster
+        run: scripts/cluster-bootstrap.sh
