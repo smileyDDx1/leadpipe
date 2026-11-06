@@ -340,14 +340,14 @@ These are deliberate choices to keep cost and size down. Each one would need to 
 
 ## Demos
 
-The results below are text transcripts from the local kind cluster, not screen recordings.
+The results below are text transcripts from the local kind cluster and from GitHub, not screen recordings.
 
 | Demo | Result | Transcript |
 | --- | --- | --- |
 | Autoscaling: load test scales API pods up, then back down | The API went from 1 pod to 4 in about a minute, and back to 1 after the load stopped. k6 sent 32,186 requests at about 143 per second with 0 failures, p95 88 ms. One worker cleared the queue backlog 152 seconds after the load stopped, and all 32,192 leads were scored. These numbers come from one kind node on a laptop, so they show the behaviour, not production capacity. | [docs/demos/autoscaling.txt](docs/demos/autoscaling.txt) |
 | Self-healing: delete a running pod and watch it return | Deleted pods were replaced and ready in 5 seconds (API), 8 seconds (worker) and 1 second (Redis). With Redis scaled to zero for over 25 seconds, the API stayed in service and accepted a lead in 0.11 seconds. The sweep scored that lead 77 seconds after Redis returned, with nothing done by hand. | [docs/demos/self-healing.txt](docs/demos/self-healing.txt) |
 | Rollback: deploy a broken version, recover with `helm rollback` | Three broken releases: a crash recovered by hand with `helm rollback`, a crash rolled back by `--rollback-on-failure`, and a smoke test failure rolled back by `deploy.sh`. The good release was live at the end. A probe inside the cluster sent 976 requests to `/healthz` through all three, with 0 failures. | [docs/demos/rollback.txt](docs/demos/rollback.txt) |
-| Pipeline gate: a failing test blocks the merge | **Not yet recorded.** Needs the GitHub repository. | None |
+| Pipeline gate: a failing test blocks the merge | [Pull request #1](https://github.com/smileyDDx1/leadpipe/pull/1) changed one scoring threshold. The worker unit tests and the end-to-end checks on Compose and kind all failed, so the required `CI passed` check failed and GitHub marked the pull request `BLOCKED`. It was closed without merging. | [docs/demos/pipeline-gate.txt](docs/demos/pipeline-gate.txt) |
 | Rebuild: `terraform destroy`, then `terraform apply` | **Not yet recorded.** Needs an AWS account. | None |
 
 ## Problems hit and how they were fixed

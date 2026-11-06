@@ -2,7 +2,7 @@
 
 Last updated: 6 November 2026
 
-**Where it stands:** everything that can run without an AWS account is built and tested. Nothing has been created on AWS yet. That needs an AWS account and a decision to spend about $0.34 an hour (estimate).
+**Where it stands:** everything that can run without an AWS account is built, tested and passing on GitHub. 4 of the brief's 5 demos are done. Nothing has been created on AWS yet. That needs an AWS account and a decision to spend about $0.34 an hour (estimate).
 
 ## What was built
 
@@ -24,7 +24,7 @@ A small lead-processing app: a FastAPI service takes leads by webhook, a worker 
 | Self-healing | **Done.** Pods replaced in 1 to 8 seconds. No lead lost in a Redis outage. |
 | Rollback | **Done.** 3 broken releases recovered, 976 requests, 0 failed. |
 | Autoscaling | **Done.** 1 to 4 pods and back, 32,186 requests, 0 failed, p95 88 ms. |
-| Pipeline gate | **Next.** Possible now that the repository is public. |
+| Pipeline gate | **Done.** A one-line bug failed 3 layers of checks, and GitHub marked the pull request `BLOCKED`. |
 | Destroy and rebuild | **Waiting on AWS.** |
 
 The brief asks for screenshots or GIFs. These are text transcripts in [docs/demos](demos/), so recordings are still open if you want them.
@@ -45,7 +45,6 @@ Testing found real bugs. The README has the full details and numbers.
 
 | Item | Who | Rough time |
 | --- | --- | --- |
-| Pipeline gate demo | Automatic | Minutes |
 | Create an AWS account login and approve the spend | **You** | Your call |
 | First real `terraform apply`, fixing what AWS rejects | After that | Half a day, including fixes |
 | Staging and production deploys, ALB, rebuild demo | After that | Included above |

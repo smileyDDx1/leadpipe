@@ -1,0 +1,31 @@
+Demo: a pull request with a bug cannot reach main.
+Pull request: https://github.com/smileyDDx1/leadpipe/pull/1
+
+[1] The change: one line that raises the hot lead threshold
+-HOT_THRESHOLD = 70
++HOT_THRESHOLD = 90
+
+[2] The merge gate on main
+required check: CI passed  |  must be up to date: true  |  applies to admins too: true
+
+[3] CI results on the pull request
+fail	CI passed
+fail	Deploy the chart to kind
+fail	End-to-end test on Docker Compose
+fail	Lint and unit test (worker)
+pass	Build and scan (api)
+pass	Build and scan (worker)
+pass	Lint and unit test (api)
+pass	Terraform format, validate and test
+
+[4] What failed, from the logs
+1 failed, 64 passed in 1.64s
+FAIL  worker graded the lead  (warm)
+FAILED tests/test_scoring.py::test_total_score_and_grade[VP Sales-200-crm-70-hot] - AssertionError: asser
+
+[5] Pull request state according to GitHub
+state: OPEN  |  mergeStateStatus: BLOCKED
+BLOCKED means GitHub will not allow the merge, because the required check failed.
+
+[6] Outcome
+Closed without merging. main still has HOT_THRESHOLD = 70.
