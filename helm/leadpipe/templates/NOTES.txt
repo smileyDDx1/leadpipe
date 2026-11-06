@@ -1,0 +1,13 @@
+LeadPipe {{ .Values.image.tag }} is deployed to namespace {{ .Release.Namespace }}.
+
+Run the smoke test:
+  helm test {{ .Release.Name }} -n {{ .Release.Namespace }}
+
+Reach the API from your machine:
+  kubectl -n {{ .Release.Namespace }} port-forward svc/{{ include "leadpipe.fullname" . }}-api 8080:{{ .Values.service.port }}
+  curl http://localhost:8080/readyz
+{{- if .Values.ingress.enabled }}
+
+Load balancer address (it can take a few minutes to appear):
+  kubectl -n {{ .Release.Namespace }} get ingress {{ include "leadpipe.fullname" . }}-api
+{{- end }}

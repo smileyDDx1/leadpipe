@@ -1,0 +1,46 @@
+# `helm test` runs this pod after every deploy. scripts/deploy.sh rolls back if it fails.
+apiVersion: v1
+kind: Pod
+metadata:
+  name: {{ include "leadpipe.fullname" . }}-smoke-test
+  labels:
+    {{- include "leadpipe.labels" . | nindent 4 }}
+    app.kubernetes.io/component: smoke-test
+  annotations:
+    "helm.sh/hook": test
+    "helm.sh/hook-delete-policy": before-hook-creation,hook-succeeded
+spec:
+  restartPolicy: Never
+  automountServiceAccountToken: false
+  securityContext:
+    {{- toYaml .Values.podSecurityContext | nindent 4 }}
+  containers:
+    - name: smoke-test
+      # The API image already has Python and is already on the node, so nothing new is pulled.
+      image: {{ include "leadpipe.image" (dict "root" . "repository" .Values.api.repository) | quote }}
+      imagePullPolicy: {{ .Values.image.pullPolicy }}
+      env:
+        - name: API_URL
+          value: "http://{{ include "leadpipe.fullname" . }}-api:{{ .Values.service.port }}"
+      command:
+        - python
+        - -c
+        - |
+          import json, os, time, urllib.request
+
+          base = os.environ["API_URL"]
+          for path in ("/healthz", "/readyz"):
+              for attempt in range(1, 11):
+                  try:
+                      with urllib.request.urlopen(base + path, timeout=3) as response:
+                          print(path, response.status, json.load(response))
+                      break
+                  except Exception as error:
+                      print(path, "attempt", attempt, "failed:", error)
+                      if attempt == 10:
+                          raise SystemExit(1)
+                      time.sleep(3)
+      resources:
+        {{- toYaml .Values.migration.resources | nindent 8 }}
+      securityContext:
+        {{- toYaml .Values.containerSecurityContext | nindent 8 }}

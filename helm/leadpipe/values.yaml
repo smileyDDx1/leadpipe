@@ -1,0 +1,127 @@
+# Defaults shared by every environment. Each values-<env>.yaml overrides only what differs.
+
+nameOverride: ""
+fullnameOverride: ""
+
+image:
+  # Registry prefix, such as 123456789012.dkr.ecr.ap-south-1.amazonaws.com. Empty for kind.
+  registry: ""
+  # Required: the git commit SHA. The chart refuses an empty tag and refuses "latest".
+  tag: ""
+  pullPolicy: IfNotPresent
+
+# Applied to every LeadPipe pod. UID 10001 matches the USER in the Dockerfiles.
+podSecurityContext:
+  runAsNonRoot: true
+  runAsUser: 10001
+  runAsGroup: 10001
+  seccompProfile:
+    type: RuntimeDefault
+
+containerSecurityContext:
+  allowPrivilegeEscalation: false
+  readOnlyRootFilesystem: true
+  capabilities:
+    drop:
+      - ALL
+
+config:
+  logLevel: INFO
+
+database:
+  # Required. PostgreSQL always lives outside this chart: RDS on AWS, a plain manifest on kind.
+  host: ""
+  port: 5432
+  name: leadpipe
+  sslmode: require
+  # Create the database if needed. One RDS instance holds both staging and production.
+  createIfMissing: true
+  poolMax: 5
+
+secrets:
+  # false: scripts/deploy.sh creates the Secret from AWS Secrets Manager before Helm runs.
+  # true: the chart creates it from `values` below, for local development only.
+  create: false
+  name: leadpipe-secrets
+  # Changing this restarts the pods. scripts/deploy.sh sets it to a hash of the secret values.
+  checksum: ""
+  values:
+    dbUser: ""
+    dbPassword: ""
+    apiKey: ""
+
+api:
+  repository: leadpipe/api
+  # Used only when autoscaling is off. With an HPA, the chart must not set replicas,
+  # or every helm upgrade would reset the count that the HPA chose.
+  replicaCount: 2
+  containerPort: 8000
+  autoscaling:
+    enabled: true
+    minReplicas: 2
+    maxReplicas: 6
+    targetCPUUtilizationPercentage: 60
+    scaleDownStabilizationSeconds: 300
+  resources:
+    requests:
+      cpu: 100m
+      memory: 128Mi
+    limits:
+      cpu: 500m
+      memory: 256Mi
+  # Time for the load balancer to stop sending traffic before the process receives SIGTERM.
+  preStopSleepSeconds: 10
+  terminationGracePeriodSeconds: 30
+  podDisruptionBudget:
+    enabled: true
+    maxUnavailable: 1
+
+worker:
+  repository: leadpipe/worker
+  replicaCount: 2
+  resources:
+    requests:
+      cpu: 50m
+      memory: 64Mi
+    limits:
+      cpu: 250m
+      memory: 128Mi
+  terminationGracePeriodSeconds: 30
+
+redis:
+  # The queue is disposable. Leads live in PostgreSQL, and the worker re-queues any that are lost.
+  enabled: true
+  # Pinned by digest, because a tag can be moved to point at different code.
+  image: redis:7-alpine@sha256:c5d34a98396a4775e223c74e929162c35c5a2182901ba26b50ade939941ce14b
+  # Set this to use a managed Redis instead of the in-cluster one.
+  host: ""
+  port: 6379
+  resources:
+    requests:
+      cpu: 50m
+      memory: 64Mi
+    limits:
+      cpu: 250m
+      memory: 128Mi
+
+migration:
+  backoffLimit: 3
+  activeDeadlineSeconds: 300
+  resources:
+    requests:
+      cpu: 50m
+      memory: 64Mi
+    limits:
+      cpu: 250m
+      memory: 128Mi
+
+service:
+  type: ClusterIP
+  port: 80
+
+ingress:
+  enabled: false
+  className: alb
+  # Empty means the Ingress answers on the load balancer's own DNS name.
+  host: ""
+  annotations: {}

@@ -1,0 +1,15 @@
+{{- if .Values.api.podDisruptionBudget.enabled }}
+# Keeps node drains, such as EKS node upgrades, from taking down every API pod at once.
+apiVersion: policy/v1
+kind: PodDisruptionBudget
+metadata:
+  name: {{ include "leadpipe.fullname" . }}-api
+  labels:
+    {{- include "leadpipe.labels" . | nindent 4 }}
+    app.kubernetes.io/component: api
+spec:
+  maxUnavailable: {{ .Values.api.podDisruptionBudget.maxUnavailable }}
+  selector:
+    matchLabels:
+      {{- include "leadpipe.selectorLabels" (dict "root" . "component" "api") | nindent 6 }}
+{{- end }}

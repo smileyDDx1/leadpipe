@@ -1,0 +1,23 @@
+# Staging on EKS. scripts/deploy.sh adds image.registry, image.tag and database.host.
+
+database:
+  name: leadpipe_staging
+
+api:
+  autoscaling:
+    minReplicas: 1
+    maxReplicas: 3
+
+worker:
+  replicaCount: 1
+
+ingress:
+  enabled: true
+  annotations:
+    alb.ingress.kubernetes.io/scheme: internet-facing
+    # Send traffic straight to pod IPs, which removes the extra hop through a NodePort.
+    alb.ingress.kubernetes.io/target-type: ip
+    alb.ingress.kubernetes.io/healthcheck-path: /readyz
+    alb.ingress.kubernetes.io/healthcheck-interval-seconds: "10"
+    alb.ingress.kubernetes.io/healthy-threshold-count: "2"
+    alb.ingress.kubernetes.io/target-group-attributes: deregistration_delay.timeout_seconds=30

@@ -1,0 +1,6 @@
+# Single node: enough for probes, autoscaling, self-healing and rollback on a laptop.
+kind: Cluster
+apiVersion: kind.x-k8s.io/v1alpha4
+name: leadpipe
+nodes:
+  - role: control-plane

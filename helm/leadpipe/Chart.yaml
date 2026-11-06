@@ -1,0 +1,7 @@
+apiVersion: v2
+name: leadpipe
+description: Lead processing platform. The same chart deploys to kind and EKS, and only the values change.
+type: application
+version: 1.0.0
+appVersion: "1.0.0"
+kubeVersion: ">=1.33.0-0"

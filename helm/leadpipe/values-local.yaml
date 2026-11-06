@@ -1,0 +1,31 @@
+# Local kind cluster. See scripts/kind-up.sh.
+
+config:
+  logLevel: INFO
+
+database:
+  # deploy/kind/postgres.yaml stands in for RDS, outside the chart in the same way.
+  host: postgres
+  sslmode: disable
+
+secrets:
+  create: true
+  # Local development values only. Real environments read theirs from AWS Secrets Manager.
+  values:
+    dbUser: leadpipe
+    dbPassword: leadpipe-local
+    apiKey: local-dev-key
+
+api:
+  autoscaling:
+    minReplicas: 1
+    maxReplicas: 4
+    # Shorter than production, so the autoscaling demo scales back down in about a minute.
+    scaleDownStabilizationSeconds: 60
+
+worker:
+  replicaCount: 1
+
+redis:
+  # By tag, because scripts/kind-load.sh imports the image under its tag.
+  image: redis:7-alpine
