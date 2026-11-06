@@ -1,0 +1,51 @@
+    grafana/k6:2.3.0
+
+[09:51:16] Starting state
+leadpipe-api   Deployment/leadpipe-api   cpu: <unknown>/60%   1     4     1     32m
+    {"total": 6, "pending": 0, "scored": 6, "duplicates": 1, "hot": 5, "warm": 0, "cold": 1, "average_score": 73.3}
+
+[09:51:18] Starting the load test: 20 virtual users for about 3 minutes 45 seconds
+09:51:18  cpu=%            desired=1  ready=1 
+09:51:34  cpu=18%          desired=1  ready=1 
+09:51:50  cpu=138%         desired=3  ready=1 
+09:52:06  cpu=406%         desired=4  ready=3 
+09:52:21  cpu=489%         desired=4  ready=4 
+09:52:37  cpu=127%         desired=4  ready=4 
+09:52:53  cpu=137%         desired=4  ready=4 
+09:53:08  cpu=149%         desired=4  ready=4 
+09:53:24  cpu=166%         desired=4  ready=4 
+09:53:40  cpu=176%         desired=4  ready=4 
+09:53:56  cpu=194%         desired=4  ready=4 
+09:54:11  cpu=204%         desired=4  ready=4 
+09:54:28  cpu=210%         desired=4  ready=4 
+09:54:44  cpu=229%         desired=4  ready=4 
+09:55:12  cpu=224%         desired=4  ready=4 
+09:55:29  cpu=102%         desired=4  ready=4 
+
+[09:55:35] Load test result
+    checks_succeeded...: 100.00% 32186 out of 32186
+    checks_failed......: 0.00%   0 out of 32186
+    http_req_duration..............: avg=39.49ms med=32.24ms p(95)=88.21ms  max=4.59s
+    http_req_failed................: 0.00%  0 out of 32186
+    http_reqs......................: 32186  142.865917/s
+    iterations.....................: 32186  142.865917/s
+
+[09:55:36] The queue absorbs the spike: waiting for the worker to finish the backlog
+    09:56:12  leads still pending: 4725
+    09:56:46  leads still pending: 3819
+    09:57:22  leads still pending: 2464
+    09:57:46  leads still pending: 295
+    09:58:08  leads still pending: 0
+    backlog cleared 152s after the load stopped
+
+[09:58:08] Load is gone: waiting for the API to scale back down
+09:58:08  cpu=5%           desired=1  ready=1 
+
+[09:58:08] Scaling events recorded by Kubernetes
+New size: 3; reason: cpu resource utilization (percentage of request) above target
+New size: 4; reason: cpu resource utilization (percentage of request) above target
+New size: 1; reason: All metrics below target
+
+[09:58:09] Final state
+leadpipe-api   Deployment/leadpipe-api   cpu: 5%/60%   1     4     1     39m
+    {"total": 32192, "pending": 0, "scored": 32192, "duplicates": 1, "hot": 20296, "warm": 11789, "cold": 107, "average_score": 71.3}

@@ -8,16 +8,16 @@ The app is small on purpose: two Python services, PostgreSQL and Redis. The subs
 
 ## Project status
 
-Everything below runs locally except the parts that need an AWS account or a GitHub repository. Those parts are written and checked, but they have not run for real yet.
+Everything below has run, either locally or on GitHub, except the parts that need an AWS account. Those parts are written and checked, but they have not run for real yet.
 
 | Area | Status |
 | --- | --- |
 | App, unit tests, Docker Compose | Verified locally |
 | Helm chart on kind, with probes, migration Job and smoke test | Verified locally |
-| Self-healing and rollback demos on kind | Verified locally |
-| Autoscaling demo on kind | Being recorded |
+| Autoscaling, self-healing and rollback demos on kind | Verified locally |
 | Terraform | Validated and tested offline against a mocked AWS provider. **Never applied to real AWS.** |
-| GitHub Actions workflows | Linted only. **Never run on GitHub.** |
+| CI pipeline (`ci.yml`) | **Passes on GitHub.** |
+| Deploy and Terraform pipelines (`deploy.yml`, `terraform.yml`) | Need AWS. `deploy.yml` skips cleanly without it. **Neither has done a real run.** |
 | ALB Ingress and the AWS Load Balancer Controller | Rendered and schema-checked only. **Never run.** |
 
 [Full details are in the Status section](#status), and [docs/progress.md](docs/progress.md) tracks progress against the original brief.
@@ -344,7 +344,7 @@ The results below are text transcripts from the local kind cluster, not screen r
 
 | Demo | Result | Transcript |
 | --- | --- | --- |
-| Autoscaling: load test scales API pods up, then back down | Being recorded | None yet |
+| Autoscaling: load test scales API pods up, then back down | The API went from 1 pod to 4 in about a minute, and back to 1 after the load stopped. k6 sent 32,186 requests at about 143 per second with 0 failures, p95 88 ms. One worker cleared the queue backlog 152 seconds after the load stopped, and all 32,192 leads were scored. These numbers come from one kind node on a laptop, so they show the behaviour, not production capacity. | [docs/demos/autoscaling.txt](docs/demos/autoscaling.txt) |
 | Self-healing: delete a running pod and watch it return | Deleted pods were replaced and ready in 5 seconds (API), 8 seconds (worker) and 1 second (Redis). With Redis scaled to zero for over 25 seconds, the API stayed in service and accepted a lead in 0.11 seconds. The sweep scored that lead 77 seconds after Redis returned, with nothing done by hand. | [docs/demos/self-healing.txt](docs/demos/self-healing.txt) |
 | Rollback: deploy a broken version, recover with `helm rollback` | Three broken releases: a crash recovered by hand with `helm rollback`, a crash rolled back by `--rollback-on-failure`, and a smoke test failure rolled back by `deploy.sh`. The good release was live at the end. A probe inside the cluster sent 976 requests to `/healthz` through all three, with 0 failures. | [docs/demos/rollback.txt](docs/demos/rollback.txt) |
 | Pipeline gate: a failing test blocks the merge | **Not yet recorded.** Needs the GitHub repository. | None |
@@ -386,8 +386,9 @@ The results below are text transcripts from the local kind cluster, not screen r
 
 | Check | Result |
 | --- | --- |
-| API unit tests | 34 pass |
-| Worker unit tests | 65 pass |
+| GitHub Actions CI | All 8 jobs pass on GitHub in 2.5 minutes, including the Trivy scans, the Compose end-to-end check, a real deploy to kind, and the Terraform tests on Linux. |
+| API unit tests | 34 pass, 81% line coverage. The rest is database code, which the end-to-end checks exercise. |
+| Worker unit tests | 65 pass, 79% line coverage. The rest is database code, which the end-to-end checks exercise. |
 | Docker Compose end-to-end check | All 13 checks pass |
 | kind end-to-end check, through the chart and a port-forward | All 13 checks pass, and the smoke test passes |
 | Redis outage in Compose | `POST` returned 202 with Redis stopped, and the worker did not restart. The sweep recovered the lead 42 seconds after Redis came back. |
@@ -403,7 +404,7 @@ The Terraform tests run offline against a mock. They prove the wiring and the ru
 
 - **AWS provisioning.** `terraform apply` has never run, so the VPC, EKS, RDS, ECR and IAM have never been created.
 - **ALB Ingress.** The Ingress is rendered and checked, but it has never created a load balancer. kind runs with the Ingress off.
-- **GitHub workflows.** `ci.yml`, `deploy.yml` and `terraform.yml` have been linted, but they have never run on GitHub.
+- **Deploy and Terraform workflows.** `deploy.yml` has only run far enough to skip cleanly with no AWS account. `terraform.yml` has been linted, but it has never run.
 - **AWS-only scripts.** `cluster-bootstrap.sh`, `aws-down.sh` and `github-setup.sh` have never run. The same goes for the staging and production paths in `deploy.sh`. The local path has run.
 
 ### GitHub plan caveat

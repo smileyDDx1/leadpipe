@@ -13,7 +13,7 @@ A small lead-processing app: a FastAPI service takes leads by webhook, a worker 
 | Part | Status | Notes |
 | --- | --- | --- |
 | 1. Containers | **Done** | Multi-stage, non-root, health checks. API image went from 1.71 GB to 242 MB. |
-| 2. CI/CD | **Written. Partly run.** | `ci.yml` runs on GitHub. `deploy.yml` and `terraform.yml` wait for AWS, so they have not run. |
+| 2. CI/CD | **CI passes on GitHub. Deploy waits for AWS.** | All 8 CI jobs passed on the first run, in 2.5 minutes. `deploy.yml` and `terraform.yml` need AWS, so they have not done a real run. |
 | 3. Terraform | **Written. Not applied.** | 32 offline test runs pass against a mocked AWS. That proves the wiring, not that AWS accepts it. |
 | 4. Kubernetes | **Done on kind** | Probes, autoscaling, migration Job and rollback all ran. The ALB Ingress needs AWS, so it has not run. |
 
@@ -23,7 +23,7 @@ A small lead-processing app: a FastAPI service takes leads by webhook, a worker 
 | --- | --- |
 | Self-healing | **Done.** Pods replaced in 1 to 8 seconds. No lead lost in a Redis outage. |
 | Rollback | **Done.** 3 broken releases recovered, 976 requests, 0 failed. |
-| Autoscaling | **In progress.** Load test running. |
+| Autoscaling | **Done.** 1 to 4 pods and back, 32,186 requests, 0 failed, p95 88 ms. |
 | Pipeline gate | **Next.** Possible now that the repository is public. |
 | Destroy and rebuild | **Waiting on AWS.** |
 
@@ -45,7 +45,6 @@ Testing found real bugs. The README has the full details and numbers.
 
 | Item | Who | Rough time |
 | --- | --- | --- |
-| Finish autoscaling demo and add results | Automatic | Minutes |
 | Pipeline gate demo | Automatic | Minutes |
 | Create an AWS account login and approve the spend | **You** | Your call |
 | First real `terraform apply`, fixing what AWS rejects | After that | Half a day, including fixes |
