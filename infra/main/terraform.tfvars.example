@@ -1,0 +1,7 @@
+github_repository = "your-account/leadpipe"
+
+# Your own IAM identity, so kubectl works from your machine.
+# cluster_admin_principal_arns = ["arn:aws:iam::123456789012:user/you"]
+
+# Cheaper for short demos. Spot nodes can be reclaimed at any time.
+# node_capacity_type = "SPOT"
