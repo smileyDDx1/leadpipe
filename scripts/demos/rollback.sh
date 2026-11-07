@@ -66,9 +66,21 @@ history
 say "Final result"
 stop_availability_probe
 live_tag="$(helm get values leadpipe --namespace "${NS}" | grep -A1 '^image:' | awk '/tag:/ { print $2 }' | tr -d '\r')"
-echo "    live image tag: ${live_tag}"
-if [[ "${deploy_exit}" != "1" || "${live_tag}" != "${GOOD}" ]]; then
-  echo "FAIL: expected deploy.sh to exit 1 and ${GOOD} to be live" >&2
+echo "    image tag in the Helm release: ${live_tag}"
+
+# Helm only reports what it asked for, so also check what the API pods are actually running.
+# The old pod from a rollback can take a while to finish terminating.
+running=""
+for _ in $(seq 1 45); do
+  running="$(kubectl --namespace "${NS}" get pods --selector app.kubernetes.io/component=api \
+    --output jsonpath='{range .items[*]}{.spec.containers[0].image}{"\n"}{end}' | tr -d '\r' | sort -u)"
+  [[ "${running}" == "leadpipe/api:${GOOD}" ]] && break
+  sleep 2
+done
+echo "    image the API pods are running: ${running}"
+
+if [[ "${deploy_exit}" != "1" || "${live_tag}" != "${GOOD}" || "${running}" != "leadpipe/api:${GOOD}" ]]; then
+  echo "FAIL: expected deploy.sh to exit 1 and only ${GOOD} to be running" >&2
   exit 1
 fi
-echo "    PASS: every broken release was rolled back, and ${GOOD} is live"
+echo "    PASS: every broken release was rolled back, and only ${GOOD} is running"

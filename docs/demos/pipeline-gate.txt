@@ -1,0 +1,42 @@
+
+[09:18:00] The merge gate on main
+required check: CI passed  |  must be up to date: true  |  applies to admins too: true
+
+[09:18:03] Opening a pull request with a one-line bug
+    https://github.com/smileyDDx1/leadpipe/pull/4
+    -HOT_THRESHOLD = 70
+    +HOT_THRESHOLD = 90
+
+[09:18:22] CI runs on the pull request
+    https://github.com/smileyDDx1/leadpipe/actions/runs/42335644349
+    09:18:32  run in_progress, jobs finished: 0/7
+    09:18:50  run in_progress, jobs finished: 2/7
+    09:19:10  run in_progress, jobs finished: 4/7
+    09:19:32  run in_progress, jobs finished: 5/7
+    09:19:54  run in_progress, jobs finished: 5/7
+    09:20:14  run in_progress, jobs finished: 6/7
+    09:20:34  run in_progress, jobs finished: 6/7
+    09:20:52  run in_progress, jobs finished: 6/7
+    09:21:11  run completed, jobs finished: 8/8
+
+[09:21:11] CI results
+fail    CI passed
+fail    Deploy the chart to kind
+fail    End-to-end test on Docker Compose
+fail    Lint and unit test (worker)
+pass    Build and scan (api)
+pass    Build and scan (worker)
+pass    Lint and unit test (api)
+pass    Terraform format, validate and test
+
+[09:21:16] What failed, from the logs
+1 failed, 64 passed in 1.68s
+FAIL  worker graded the lead  (warm)
+FAILED tests/test_scoring.py::test_total_score_and_grade[VP Sales-200-crm-70-hot] - AssertionError: asser
+
+[09:21:24] Pull request state according to GitHub
+pull request #4  |  state: OPEN  |  mergeStateStatus: BLOCKED
+
+[09:21:29] Closing it without merging, and checking main
+    main still has: HOT_THRESHOLD = 70
+    PASS: the required check failed, and GitHub refused the merge

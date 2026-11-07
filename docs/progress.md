@@ -1,8 +1,8 @@
 # Progress against the project brief
 
-Last updated: 6 November 2026
+Last updated: 7 November 2026
 
-**Where it stands:** everything that can run without an AWS account is built and tested. Nothing has been created on AWS yet. That needs an AWS account and a decision to spend about $0.34 an hour (estimate).
+**Where it stands:** everything that can run without an AWS account is built, tested and passing on GitHub. 4 of the brief's 5 demos are done and recorded as GIFs. Nothing has been created on AWS yet. That needs an AWS account and a decision to spend about $0.34 an hour (estimate).
 
 ## What was built
 
@@ -21,13 +21,13 @@ A small lead-processing app: a FastAPI service takes leads by webhook, a worker 
 
 | Demo | Status |
 | --- | --- |
-| Self-healing | **Done.** Pods replaced in 1 to 8 seconds. No lead lost in a Redis outage. |
-| Rollback | **Done.** 3 broken releases recovered, 976 requests, 0 failed. |
-| Autoscaling | **Done.** 1 to 4 pods and back, 32,186 requests, 0 failed, p95 88 ms. |
-| Pipeline gate | **Next.** Possible now that the repository is public. |
+| Self-healing | **Done.** Pods replaced in 3 to 14 seconds. No lead lost in a Redis outage. |
+| Rollback | **Done.** 3 broken releases recovered, 1,116 requests, 0 failed. |
+| Autoscaling | **Done.** 1 to 4 pods and back, 21,964 requests, 0 failed, p95 266 ms. |
+| Pipeline gate | **Done.** A one-line bug failed 4 of 8 checks, including the required one, and GitHub marked the pull request `BLOCKED`. |
 | Destroy and rebuild | **Waiting on AWS.** |
 
-The brief asks for screenshots or GIFs. These are text transcripts in [docs/demos](demos/), so recordings are still open if you want them.
+Each demo has a GIF and a transcript in [docs/demos](demos/), plus a screenshot of the failed CI run for the gate. The GIFs are rendered from the live script output by `scripts/demos/record_gif.py`, not by a screen recorder, with waits shortened and real elapsed time on every frame.
 
 ## Problems found and fixed
 
@@ -40,13 +40,13 @@ Testing found real bugs. The README has the full details and numbers.
 5. **Every deploy restarted Redis,** because of a version label on its pod.
 6. **"Vice President" scored as a president,** which a unit test caught.
 7. **`kind load` failed on multi-platform images,** so the images are now exported one platform at a time.
+8. **A demo reported PASS on a result it never saw,** because the pipeline gate script found its CI run by branch name and read the previous day's run. It now matches by commit and checks that the required check itself failed.
+9. **The rollback demo seemed to leave a broken pod live,** because its listing did not mark pods that were shutting down, and its final check read only the Helm release. It now marks those pods and checks the image the API pods are running.
 
 ## What is left
 
 | Item | Who | Rough time |
 | --- | --- | --- |
-| Pipeline gate demo | Automatic | Minutes |
-| Create an AWS account login and approve the spend | **You** | Your call |
+| An AWS account, and approving the spend | **You** | Your call |
 | First real `terraform apply`, fixing what AWS rejects | After that | Half a day, including fixes |
 | Staging and production deploys, ALB, rebuild demo | After that | Included above |
-| Screen recordings or GIFs, if wanted | **You** | About 30 minutes |

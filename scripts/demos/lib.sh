@@ -7,8 +7,9 @@ say() { printf '\n[%s] %s\n' "$(date +%H:%M:%S)" "$*"; }
 
 pods() { kubectl --namespace "${NS}" get pods --no-headers \
   --selector "app.kubernetes.io/instance=leadpipe${1:+,app.kubernetes.io/component=$1}" \
-  --output custom-columns='NAME:.metadata.name,READY:.status.containerStatuses[0].ready,PHASE:.status.phase,RESTARTS:.status.containerStatuses[0].restartCount,IMAGE:.spec.containers[0].image' \
-  | grep -v smoke-test || true; }
+  --output custom-columns='NAME:.metadata.name,READY:.status.containerStatuses[0].ready,PHASE:.status.phase,RESTARTS:.status.containerStatuses[0].restartCount,IMAGE:.spec.containers[0].image,DELETING:.metadata.deletionTimestamp' \
+  | grep -v smoke-test \
+  | awk '{ printf "%-34s %-6s %-12s %-3s %s\n", $1, $2, ($6 == "<none>" ? $3 : "Terminating"), $4, $5 }' || true; }
 
 # The first pod of a component that is not already shutting down.
 live_pod() {
