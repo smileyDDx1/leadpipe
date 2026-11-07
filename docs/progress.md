@@ -41,6 +41,7 @@ Testing found real bugs. The README has the full details and numbers.
 6. **"Vice President" scored as a president,** which a unit test caught.
 7. **`kind load` failed on multi-platform images,** so the images are now exported one platform at a time.
 8. **A demo reported PASS on a result it never saw,** because the pipeline gate script found its CI run by branch name and read the previous day's run. It now matches by commit and checks that the required check itself failed.
+9. **The rollback demo seemed to leave a broken pod live,** because its listing did not mark pods that were shutting down, and its final check read only the Helm release. It now marks those pods and checks the image the API pods are running.
 
 ## What is left
 
