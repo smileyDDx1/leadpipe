@@ -166,7 +166,7 @@ scripts/demos/autoscaling.sh 2>&1 | python scripts/demos/record_gif.py --command
 
 This needs Pillow (`pip install Pillow`). The services do not use it.
 
-`scripts/demos/pipeline-gate.sh` takes no arguments. It opens a real pull request on GitHub with a one-line bug, waits for CI, and then closes the pull request.
+`scripts/demos/rollback.sh` takes one argument: the image tag of the good release now deployed. `scripts/demos/pipeline-gate.sh` takes no arguments. It opens a real pull request on GitHub with a one-line bug, waits for CI, and then closes the pull request.
 
 ## Troubleshooting
 

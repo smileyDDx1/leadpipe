@@ -385,7 +385,7 @@ Script: `scripts/demos/pipeline-gate.sh`. Transcript: [docs/demos/pipeline-gate.
 
 ### Re-recording a demo
 
-Pipe the demo script into the recorder. It writes `<out>.gif` and `<out>.txt`. It needs Pillow (`pip install Pillow`), which is used only here and is not a dependency of the services.
+Pipe the demo script into the recorder. It writes `<out>.gif` and `<out>.txt`. It needs Pillow (`pip install Pillow`), which is used only here and is not a dependency of the services. `scripts/demos/rollback.sh` takes one argument: the image tag of the good release now deployed. The other demos take no arguments.
 
 ```bash
 scripts/demos/autoscaling.sh 2>&1 | python scripts/demos/record_gif.py --command scripts/demos/autoscaling.sh --out docs/demos/autoscaling
