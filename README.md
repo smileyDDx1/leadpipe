@@ -17,6 +17,7 @@ Everything below has run, either locally or on GitHub, except the parts that nee
 | Autoscaling, self-healing and rollback demos on kind | Verified locally |
 | Terraform | Validated and tested offline against a mocked AWS provider. **Never applied to real AWS.** |
 | CI pipeline (`ci.yml`) | **Passes on GitHub.** |
+| Pipeline gate demo | Ran on GitHub, not locally. A real pull request failed CI and was blocked. |
 | Deploy and Terraform pipelines (`deploy.yml`, `terraform.yml`) | Need AWS. `deploy.yml` skips cleanly without it. **Neither has done a real run.** |
 | ALB Ingress and the AWS Load Balancer Controller | Rendered and schema-checked only. **Never run.** |
 
@@ -77,7 +78,7 @@ leadpipe/
 ├── loadtest/                k6 script for the autoscaling demo
 ├── scripts/                 Deploy, kind setup, cluster bootstrap, teardown, validation, demos
 ├── .github/workflows/       ci.yml, deploy.yml, terraform.yml
-└── docs/                    Architecture diagram, runbook, demo transcripts
+└── docs/                    Architecture diagram, runbook, demo GIFs and transcripts
 ```
 
 ## Run it locally
@@ -340,17 +341,61 @@ These are deliberate choices to keep cost and size down. Each one would need to 
 
 ## Demos
 
-The results below are text transcripts from the local kind cluster and from GitHub, not screen recordings.
+Each GIF is rendered from the live output of the demo script by `scripts/demos/record_gif.py`. It is not a screen recording. Long waits are shortened, each frame shows the real time elapsed, and every line is what the script printed. The transcript of the same run sits next to each GIF in `docs/demos/`.
 
-| Demo | Result | Transcript |
-| --- | --- | --- |
-| Autoscaling: load test scales API pods up, then back down | The API went from 1 pod to 4 in about a minute, and back to 1 after the load stopped. k6 sent 32,186 requests at about 143 per second with 0 failures, p95 88 ms. One worker cleared the queue backlog 152 seconds after the load stopped, and all 32,192 leads were scored. These numbers come from one kind node on a laptop, so they show the behaviour, not production capacity. | [docs/demos/autoscaling.txt](docs/demos/autoscaling.txt) |
-| Self-healing: delete a running pod and watch it return | Deleted pods were replaced and ready in 5 seconds (API), 8 seconds (worker) and 1 second (Redis). With Redis scaled to zero for over 25 seconds, the API stayed in service and accepted a lead in 0.11 seconds. The sweep scored that lead 77 seconds after Redis returned, with nothing done by hand. | [docs/demos/self-healing.txt](docs/demos/self-healing.txt) |
-| Rollback: deploy a broken version, recover with `helm rollback` | Three broken releases: a crash recovered by hand with `helm rollback`, a crash rolled back by `--rollback-on-failure`, and a smoke test failure rolled back by `deploy.sh`. The good release was live at the end. A probe inside the cluster sent 976 requests to `/healthz` through all three, with 0 failures. | [docs/demos/rollback.txt](docs/demos/rollback.txt) |
-| Pipeline gate: a failing test blocks the merge | [Pull request #1](https://github.com/smileyDDx1/leadpipe/pull/1) changed one scoring threshold. The worker unit tests and the end-to-end checks on Compose and kind all failed, so the required `CI passed` check failed and GitHub marked the pull request `BLOCKED`. It was closed without merging. | [docs/demos/pipeline-gate.txt](docs/demos/pipeline-gate.txt) |
-| Rebuild: `terraform destroy`, then `terraform apply` | **Not yet recorded.** Needs an AWS account. | None |
+### Autoscaling
+
+A k6 load test pushes the API to scale up, then the load stops and it scales back down. The HPA asked for 4 pods 34 seconds after the load test started, and all 4 were ready at 51 seconds. Kubernetes recorded new sizes 4, then 3, then 1, and it was back at 1 pod within 110 seconds of the load stopping. k6 sent 21,964 requests at about 98 per second with 0 failures and p95 266 ms. One worker cleared the backlog 109 seconds after the load stopped, and every lead was scored (21,965 total, 0 pending, which includes 1 lead left from an earlier demo). These numbers come from one kind node on a laptop, so they show the behaviour, not production capacity. They also vary a lot between runs: the same code reached 143 requests per second with p95 88 ms in a run on 6 November.
+
+![Terminal output of the autoscaling demo: the load test starts, the API scales from 1 pod to 4, then back to 1 after the load stops, and every lead is scored.](docs/demos/autoscaling.gif)
+
+Script: `scripts/demos/autoscaling.sh`. Transcript: [docs/demos/autoscaling.txt](docs/demos/autoscaling.txt)
+
+### Self-healing
+
+Pods are deleted while the system runs, and Redis is taken away for a while. Deleted pods were replaced and ready in 14 seconds (API), 14 seconds (worker) and 3 seconds (Redis). With Redis scaled to zero for over 25 seconds, the API stayed in service and accepted a lead in 0.77 seconds. The sweep scored that lead 75 seconds after Redis returned, with nothing done by hand.
+
+![Terminal output of the self-healing demo: API, worker and Redis pods are deleted and replaced, then Redis is stopped, a lead is still accepted, and the sweep scores it after Redis returns.](docs/demos/self-healing.gif)
+
+Script: `scripts/demos/self-healing.sh`. Transcript: [docs/demos/self-healing.txt](docs/demos/self-healing.txt)
+
+### Rollback
+
+Three broken releases: a crash recovered by hand with `helm rollback`, a crash rolled back by `--rollback-on-failure`, and a smoke test failure rolled back by `deploy.sh`. A probe inside the cluster sent 1,116 requests to `/healthz` through all three, with 0 failures. At the end the script checks both the Helm release and the image the API pods are actually running.
+
+![Terminal output of the rollback demo: three broken releases are deployed and rolled back, while a probe inside the cluster keeps calling /healthz.](docs/demos/rollback.gif)
+
+Script: `scripts/demos/rollback.sh`. Transcript: [docs/demos/rollback.txt](docs/demos/rollback.txt)
+
+### Pipeline gate
+
+The script opens a real pull request, [#4](https://github.com/smileyDDx1/leadpipe/pull/4), which changes one scoring threshold from 70 to 90. In [the CI run](https://github.com/smileyDDx1/leadpipe/actions/runs/42335644349), 4 of the 8 checks failed: `CI passed`, `Deploy the chart to kind`, `End-to-end test on Docker Compose` and `Lint and unit test (worker)`. The other 4 passed. The worker unit tests reported 1 failed, 64 passed. GitHub reported `mergeStateStatus: BLOCKED`, the script closed the pull request without merging, and main still has `HOT_THRESHOLD = 70`.
+
+GitHub only shows its "Merging is blocked" box to signed-in users, so the blocked state here comes from the GitHub API, not a screenshot of that box. The screenshot below shows GitHub's own view of the failed run.
+
+![Terminal output of the pipeline gate demo: a pull request changes a scoring threshold, CI fails, and GitHub reports the merge state as BLOCKED before the pull request is closed.](docs/demos/pipeline-gate.gif)
+
+![GitHub's view of the failed CI run for pull request 4, with four failed checks and four passed.](docs/demos/pipeline-gate-ci-run.png)
+
+Script: `scripts/demos/pipeline-gate.sh`. Transcript: [docs/demos/pipeline-gate.txt](docs/demos/pipeline-gate.txt)
+
+### Rebuild
+
+`terraform destroy`, then `terraform apply`. **Not yet recorded.** Needs an AWS account.
+
+### Re-recording a demo
+
+Pipe the demo script into the recorder. It writes `<out>.gif` and `<out>.txt`. It needs Pillow (`pip install Pillow`), which is used only here and is not a dependency of the services.
+
+```bash
+scripts/demos/autoscaling.sh 2>&1 | python scripts/demos/record_gif.py --command scripts/demos/autoscaling.sh --out docs/demos/autoscaling
+```
 
 ## Problems hit and how they were fixed
+
+**A demo reported PASS on a result it never saw.** The first pipeline gate script found its CI run by branch name. A run from the day before had used the same branch name, so the script read that old result, with 8 of 8 jobs complete after 4 seconds, while the new run's checks were still pending. GitHub also reports `BLOCKED` while checks are pending, so the script printed PASS and closed the pull request ([#3](https://github.com/smileyDDx1/leadpipe/pull/3)) before its CI finished. The fix finds the run by commit SHA, and passes only if the `CI passed` check itself failed and the state is `BLOCKED`. The output was caught by reading it, since the exit code was 0.
+
+**The rollback demo seemed to leave a broken pod live.** Right after the script said `broken-smoke` was not live, its listing showed a `broken-smoke` pod as ready. `helm rollback --wait` returns once the new pods are ready, and the old pod was still shutting down, but the listing did not show that. The demo's final check had the same blind spot, because it read the Helm release, which reports what Helm asked for rather than what is running. The listing now marks terminating pods, and the demo passes only if the API pods themselves run the good image.
 
 **A Redis outage held every request for 46 seconds.** Stopping Redis made `/readyz` and `POST /leads` take about 46 seconds each. redis-py 8 retries 10 times by default, which is 11 connection attempts per call. A webhook caller would time out and resend a lead that was already saved, creating a duplicate. The worker's loop stalled for about 48 seconds, past its 30 second heartbeat limit, so an outage could have restarted healthy pods. The fix turns off the library's retries in both services. After it, `/readyz` took about 4 seconds and `POST` about 8 seconds in Compose, where one Docker DNS lookup for the stopped container took 3.84 seconds.
 

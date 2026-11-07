@@ -1,42 +1,42 @@
 
-[09:39:36] Starting state
-leadpipe-api-79d6c9bdcc-xc6gx      true   Running   0     leadpipe/api:rel-4
-leadpipe-redis-6f7c85946c-ks9sh    true   Running   0     redis:7-alpine
-leadpipe-worker-6ccddb9b7f-tdnv9   true   Running   0     leadpipe/worker:rel-4
+[09:41:47] Starting state
+leadpipe-api-549786889f-thcz8      true   Running      0   leadpipe/api:3223797d7eec
+leadpipe-redis-6f7c85946c-cvmxm    true   Running      0   redis:7-alpine
+leadpipe-worker-5c8d949cd9-7829q   true   Running      0   leadpipe/worker:3223797d7eec
 
-[09:39:37] Deleting the api pod: leadpipe-api-79d6c9bdcc-xc6gx
-    replaced by leadpipe-api-79d6c9bdcc-xdpkh, ready after 5s
+[09:41:48] Deleting the api pod: leadpipe-api-549786889f-thcz8
+    replaced by leadpipe-api-549786889f-qp997, ready after 14s
 
-[09:39:42] Deleting the worker pod: leadpipe-worker-6ccddb9b7f-tdnv9
-    replaced by leadpipe-worker-6ccddb9b7f-7srlp, ready after 8s
+[09:42:02] Deleting the worker pod: leadpipe-worker-5c8d949cd9-7829q
+    replaced by leadpipe-worker-5c8d949cd9-79vc7, ready after 14s
 
-[09:39:50] Deleting the redis pod: leadpipe-redis-6f7c85946c-ks9sh
-    replaced by leadpipe-redis-6f7c85946c-j5jtn, ready after 1s
+[09:42:17] Deleting the redis pod: leadpipe-redis-6f7c85946c-cvmxm
+    replaced by leadpipe-redis-6f7c85946c-vftpg, ready after 3s
     Redis has no persistence, so the stream and the consumer group are gone.
 
-[09:39:51] The harder case: a long Redis outage, with a lead arriving in the middle of it
+[09:42:20] The harder case: a long Redis outage, with a lead arriving in the middle of it
     Redis is scaled to zero. Waiting 25 seconds, longer than readiness takes to fail.
     The API stays in service, because it can still save leads:
-leadpipe-api-79d6c9bdcc-xdpkh   true   Running   0     leadpipe/api:rel-4
+leadpipe-api-549786889f-qp997      true   Running      0   leadpipe/api:3223797d7eec
 
-[09:40:19] Posting a lead while Redis is down
-45b7b1ff-2a81-48ac-93ff-67f95e236a19
-    HTTP 202 in 0.11s
+[09:42:47] Posting a lead while Redis is down
+914b3cf5-6435-45ee-ab4a-c2977dd62661
+    HTTP 202 in 0.77s
 
-[09:40:21] Bringing Redis back. It starts empty, so only the sweep can recover this lead.
+[09:42:52] Bringing Redis back. It starts empty, so only the sweep can recover this lead.
 
-[09:40:22] Waiting for the lead to be scored, with nothing done by hand
-    lead 45b7b1ff-2a81-48ac-93ff-67f95e236a19: scored 95 hot, 77s after Redis came back
+[09:42:53] Waiting for the lead to be scored, with nothing done by hand
+    lead 914b3cf5-6435-45ee-ab4a-c2977dd62661: scored 95 hot, 75s after Redis came back
 
-[09:41:39] Worker log
-    04:09:55  dependency unavailable (ConnectionError), retrying in 4s
-    04:09:59  dependency unavailable (ConnectionError), retrying in 8s
-    04:10:07  dependency unavailable (ConnectionError), retrying in 15s
-    04:10:22  dependency unavailable (ConnectionError), retrying in 15s
-    04:10:37  created consumer group scorers
-    04:11:38  re-queued 1 leads that were missing from the queue
+[09:44:08] Worker log
+    04:12:21  dependency unavailable (ConnectionError), retrying in 4s
+    04:12:25  dependency unavailable (ConnectionError), retrying in 8s
+    04:12:33  dependency unavailable (ConnectionError), retrying in 15s
+    04:12:48  dependency unavailable (ConnectionError), retrying in 15s
+    04:13:03  created consumer group scorers
+    04:14:04  re-queued 1 leads that were missing from the queue
 
-[09:41:39] Final state
-leadpipe-api-79d6c9bdcc-xdpkh      true   Running   0     leadpipe/api:rel-4
-leadpipe-redis-6f7c85946c-ntjpk    true   Running   0     redis:7-alpine
-leadpipe-worker-6ccddb9b7f-7srlp   true   Running   0     leadpipe/worker:rel-4
+[09:44:09] Final state
+leadpipe-api-549786889f-qp997      true   Running      0   leadpipe/api:3223797d7eec
+leadpipe-redis-6f7c85946c-vjr78    true   Running      0   redis:7-alpine
+leadpipe-worker-5c8d949cd9-79vc7   true   Running      0   leadpipe/worker:3223797d7eec

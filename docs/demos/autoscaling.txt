@@ -1,51 +1,50 @@
     grafana/k6:2.3.0
 
-[09:51:16] Starting state
-leadpipe-api   Deployment/leadpipe-api   cpu: <unknown>/60%   1     4     1     32m
-    {"total": 6, "pending": 0, "scored": 6, "duplicates": 1, "hot": 5, "warm": 0, "cold": 1, "average_score": 73.3}
+[09:32:41] Starting state
+leadpipe-api   Deployment/leadpipe-api   cpu: 22%/60%   1     4     1     11m
+    {"total": 1, "pending": 0, "scored": 1, "duplicates": 0, "hot": 1, "warm": 0, "cold": 0, "average_score": 95.0}
 
-[09:51:18] Starting the load test: 20 virtual users for about 3 minutes 45 seconds
-09:51:18  cpu=%            desired=1  ready=1 
-09:51:34  cpu=18%          desired=1  ready=1 
-09:51:50  cpu=138%         desired=3  ready=1 
-09:52:06  cpu=406%         desired=4  ready=3 
-09:52:21  cpu=489%         desired=4  ready=4 
-09:52:37  cpu=127%         desired=4  ready=4 
-09:52:53  cpu=137%         desired=4  ready=4 
-09:53:08  cpu=149%         desired=4  ready=4 
-09:53:24  cpu=166%         desired=4  ready=4 
-09:53:40  cpu=176%         desired=4  ready=4 
-09:53:56  cpu=194%         desired=4  ready=4 
-09:54:11  cpu=204%         desired=4  ready=4 
-09:54:28  cpu=210%         desired=4  ready=4 
-09:54:44  cpu=229%         desired=4  ready=4 
-09:55:12  cpu=224%         desired=4  ready=4 
-09:55:29  cpu=102%         desired=4  ready=4 
+[09:32:44] Starting the load test: 20 virtual users for about 3 minutes 45 seconds
+09:32:45  cpu=22%          desired=1  ready=1 
+09:33:01  cpu=22%          desired=1  ready=1 
+09:33:18  cpu=194%         desired=4  ready=1 
+09:33:35  cpu=414%         desired=4  ready=4 
+09:33:52  cpu=162%         desired=4  ready=4 
+09:34:08  cpu=131%         desired=4  ready=4 
+09:34:26  cpu=165%         desired=4  ready=4 
+09:34:44  cpu=171%         desired=4  ready=4 
+09:35:03  cpu=191%         desired=4  ready=4 
+09:35:20  cpu=197%         desired=4  ready=4 
+09:35:38  cpu=197%         desired=4  ready=4 
+09:35:56  cpu=238%         desired=4  ready=4 
+09:36:16  cpu=253%         desired=4  ready=4 
+09:36:33  cpu=261%         desired=4  ready=4 
+09:36:49  cpu=149%         desired=4  ready=4 
 
-[09:55:35] Load test result
-    checks_succeeded...: 100.00% 32186 out of 32186
-    checks_failed......: 0.00%   0 out of 32186
-    http_req_duration..............: avg=39.49ms med=32.24ms p(95)=88.21ms  max=4.59s
-    http_req_failed................: 0.00%  0 out of 32186
-    http_reqs......................: 32186  142.865917/s
-    iterations.....................: 32186  142.865917/s
+[09:36:50] Load test result
+    checks_succeeded...: 100.00% 21964 out of 21964
+    checks_failed......: 0.00%   0 out of 21964
+    http_req_duration..............: avg=77.09ms  med=45ms    p(95)=265.74ms max=1.23s
+    http_req_failed................: 0.00%  0 out of 21964
+    http_reqs......................: 21964  97.617176/s
+    iterations.....................: 21964  97.617176/s
 
-[09:55:36] The queue absorbs the spike: waiting for the worker to finish the backlog
-    09:56:12  leads still pending: 4725
-    09:56:46  leads still pending: 3819
-    09:57:22  leads still pending: 2464
-    09:57:46  leads still pending: 295
-    09:58:08  leads still pending: 0
-    backlog cleared 152s after the load stopped
+[09:36:51] The queue absorbs the spike: waiting for the worker to finish the backlog
+    09:36:59  leads still pending: 7422
+    09:37:26  leads still pending: 5011
+    09:37:51  leads still pending: 3018
+    09:38:16  leads still pending: 936
+    09:38:40  leads still pending: 0
+    backlog cleared 109s after the load stopped
 
-[09:58:08] Load is gone: waiting for the API to scale back down
-09:58:08  cpu=5%           desired=1  ready=1 
+[09:38:40] Load is gone: waiting for the API to scale back down
+09:38:40  cpu=4%           desired=1  ready=1 
 
-[09:58:08] Scaling events recorded by Kubernetes
-New size: 3; reason: cpu resource utilization (percentage of request) above target
+[09:38:40] Scaling events recorded by Kubernetes
 New size: 4; reason: cpu resource utilization (percentage of request) above target
+New size: 3; reason: All metrics below target
 New size: 1; reason: All metrics below target
 
-[09:58:09] Final state
-leadpipe-api   Deployment/leadpipe-api   cpu: 5%/60%   1     4     1     39m
-    {"total": 32192, "pending": 0, "scored": 32192, "duplicates": 1, "hot": 20296, "warm": 11789, "cold": 107, "average_score": 71.3}
+[09:38:40] Final state
+leadpipe-api   Deployment/leadpipe-api   cpu: 4%/60%   1     4     1     17m
+    {"total": 21965, "pending": 0, "scored": 21965, "duplicates": 0, "hot": 12813, "warm": 9064, "cold": 88, "average_score": 69.8}

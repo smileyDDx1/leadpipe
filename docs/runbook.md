@@ -156,6 +156,18 @@ The state bucket, budget and Terraform roles stay, because a rebuild needs them.
 
 Check the AWS Billing console a few hours later to confirm the charges have stopped.
 
+## Re-record a demo
+
+Each demo in `scripts/demos/` can be recorded as a GIF and a transcript in `docs/demos/`. Run it through `record_gif.py`:
+
+```bash
+scripts/demos/autoscaling.sh 2>&1 | python scripts/demos/record_gif.py --command scripts/demos/autoscaling.sh --out docs/demos/autoscaling
+```
+
+This needs Pillow (`pip install Pillow`). The services do not use it.
+
+`scripts/demos/pipeline-gate.sh` takes no arguments. It opens a real pull request on GitHub with a one-line bug, waits for CI, and then closes the pull request.
+
 ## Troubleshooting
 
 ### `Not authorized to perform sts:AssumeRoleWithWebIdentity`
