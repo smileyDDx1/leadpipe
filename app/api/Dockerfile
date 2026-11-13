@@ -1,7 +1,7 @@
 # syntax=docker/dockerfile:1
 
 # ---- Stage 1: install dependencies into a virtualenv ----
-FROM python:3.13-slim@sha256:09a17cad02668ae61ece136b4fd36ac3849e14f670ebedb637ea3e15580525bc AS deps
+FROM python:3.15-slim@sha256:65a65fc7b30b06cb6df4930fd4650697cb23f4c2698ab81fc87e4b031bc36928 AS deps
 ENV PIP_DISABLE_PIP_VERSION_CHECK=1 PIP_NO_CACHE_DIR=1
 COPY requirements.txt /tmp/requirements.txt
 RUN python -m venv /opt/venv \
@@ -9,7 +9,7 @@ RUN python -m venv /opt/venv \
     && /opt/venv/bin/pip uninstall --yes pip
 
 # ---- Stage 2: runtime image with only the virtualenv and the code ----
-FROM python:3.13-slim@sha256:09a17cad02668ae61ece136b4fd36ac3849e14f670ebedb637ea3e15580525bc AS runtime
+FROM python:3.15-slim@sha256:65a65fc7b30b06cb6df4930fd4650697cb23f4c2698ab81fc87e4b031bc36928 AS runtime
 RUN groupadd --gid 10001 app \
     && useradd --uid 10001 --gid 10001 --no-create-home --shell /usr/sbin/nologin app \
     && rm -rf /usr/local/lib/python3.13/site-packages/pip* /usr/local/bin/pip*
